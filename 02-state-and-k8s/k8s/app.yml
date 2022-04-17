@@ -1,0 +1,68 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: counterapp
+  labels:
+    app: counter
+spec:
+  selector:
+    app: counter
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8088
+  type: LoadBalancer
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: counterapp
+  labels:
+    app: counter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: counter
+  template:
+    metadata:
+      labels:
+        app: counter
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "counter-app"
+        dapr.io/app-port: "8088"
+    spec:
+      containers:
+        - name: counter
+          image: counter-app:latest
+          ports:
+            - containerPort: 8088
+          imagePullPolicy: Never
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multiplierapp
+  labels:
+    app: multiplier
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multiplier
+  template:
+    metadata:
+      labels:
+        app: multiplier
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "multiplier-app"
+    spec:
+      containers:
+        - name: multiplier
+          image: multiplier-app:latest
+          ports:
+            - containerPort: 8088
+          imagePullPolicy: Never

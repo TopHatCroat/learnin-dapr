@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -16,6 +17,11 @@ type StateData struct {
 }
 
 func main() {
+	daprPort := os.Getenv("DAPR_HTTP_PORT")
+	stateStoreUrl := "http://localhost:" + daprPort + "/v1.0/state/statestore"
+
+	log.Println(stateStoreUrl)
+
 	http.HandleFunc("/increment",
 		func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
@@ -24,7 +30,7 @@ func main() {
 				return
 			}
 
-			resp, _ := http.Get("http://localhost:8089/v1.0/state/statestore/counter")
+			resp, _ := http.Get(stateStoreUrl + "/counter")
 			defer resp.Body.Close()
 			body, _ := ioutil.ReadAll(resp.Body)
 			strVal := string(body)
@@ -38,7 +44,7 @@ func main() {
 			stateObj := []StateData{{Key: "counter", Value: count}}
 			stateData, _ := json.Marshal(stateObj)
 			_, _ = http.Post(
-				"http://localhost:8089/v1.0/state/statestore",
+				stateStoreUrl,
 				"application/json",
 				bytes.NewBuffer(stateData),
 			)
@@ -52,7 +58,7 @@ func main() {
 				return
 			}
 
-			resp, _ := http.Get("http://localhost:8089/v1.0/state/statestore/counter")
+			resp, _ := http.Get(stateStoreUrl + "/counter")
 			defer resp.Body.Close()
 			body, _ := ioutil.ReadAll(resp.Body)
 			strVal := string(body)
@@ -61,5 +67,6 @@ func main() {
 			fmt.Fprintf(w, strVal)
 		})
 
+	log.Printf("Starting counter-app...")
 	log.Fatal(http.ListenAndServe(":8088", nil))
 }
