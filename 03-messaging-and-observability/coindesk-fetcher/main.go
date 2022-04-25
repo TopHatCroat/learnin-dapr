@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
+	dapr "github.com/dapr/go-sdk/client"
 	"log"
 	"net/http"
 	"os"
@@ -60,7 +62,7 @@ func getAndParseResponse(url string) (*PriceEvent, error) {
 
 	err := getJson(url, response)
 	if err != nil {
-		return nil, errors.New("failed to get JSON")
+		return nil, fmt.Errorf("failed to get JSON: %v", err)
 	}
 
 	return &PriceEvent{
@@ -77,8 +79,18 @@ func main() {
 	}
 
 	sourceEndpoint := os.Getenv("COIN_DESK_ENDPOINT")
-	if len(daprPort) == 0 {
+	if len(sourceEndpoint) == 0 {
 		log.Fatal("COIN_DESK_ENDPOINT must be set")
+	}
+
+	pubSubName := os.Getenv("PUB_SUB_NAME")
+	if len(pubSubName) == 0 {
+		log.Fatal("PUB_SUB_NAME must be set")
+	}
+
+	topicName := os.Getenv("TOPIC_NAME")
+	if len(topicName) == 0 {
+		log.Fatal("TOPIC_NAME must be set")
 	}
 
 	queryInterval, err := strconv.Atoi(os.Getenv("QUERY_INTERVAL_SECONDS"))
@@ -87,13 +99,20 @@ func main() {
 		log.Printf("QUERY_INTERVAL_SECONDS not set, using default value: %d\n", queryInterval)
 	}
 
+	client, err := dapr.NewClient()
+	ctx := context.Background()
+
 	ticker := time.Tick(time.Duration(queryInterval) * time.Second)
 	for next := range ticker {
 		result, err := getAndParseResponse(sourceEndpoint)
 		if err != nil {
-			log.Printf("failed parsing response: %e", err)
+			log.Printf("failed parsing response: %v", err)
 		}
 
 		log.Printf("%v %+v\n", next, result)
+
+		if err := client.PublishEvent(ctx, pubSubName, topicName, result); err != nil {
+			panic(err)
+		}
 	}
 }
