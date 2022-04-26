@@ -5,7 +5,8 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "ts-node main.ts",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
+    "@types/uuid": "^8.3.4",
     "jest": "^27.5.1",
     "ts-jest": "^27.1.4",
     "ts-node": "10.7.0",
