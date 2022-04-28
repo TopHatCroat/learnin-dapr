@@ -1,10 +1,9 @@
 package main
 
 import (
-	"context"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	dapr "github.com/dapr/go-sdk/client"
 	"log"
 	"net/http"
 	"os"
@@ -99,8 +98,14 @@ func main() {
 		log.Printf("QUERY_INTERVAL_SECONDS not set, using default value: %d\n", queryInterval)
 	}
 
-	client, err := dapr.NewClient()
-	ctx := context.Background()
+	//client, err := dapr.NewClient()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//ctx := context.Background()
+
+	client := http.Client{}
 
 	ticker := time.Tick(time.Duration(queryInterval) * time.Second)
 	for next := range ticker {
@@ -111,8 +116,32 @@ func main() {
 
 		log.Printf("%v %+v\n", next, result)
 
-		if err := client.PublishEvent(ctx, pubSubName, topicName, result); err != nil {
-			panic(err)
+		priceEvent := PriceEvent{
+			Symbol: result.Symbol,
+			Usd:    result.Usd,
+			Eur:    result.Eur,
 		}
+
+		priceEventJson, err := json.Marshal(priceEvent)
+
+		//log.Printf("wat")
+		//if client == nil {
+		//	panic("client is null")
+		//}
+		//err = client.PublishEvent(ctx, pubSubName, topicName, priceEvent)
+		//if err != nil {
+		//	panic(err)
+		//}
+
+		req, err := http.NewRequest("POST", "http://localhost:"+daprPort+"/v1.0/publish/"+pubSubName+"/"+pubSubName, bytes.NewBuffer(priceEventJson))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// Publish an event using Dapr pub/sub
+		if _, err = client.Do(req); err != nil {
+			log.Fatal(err)
+		}
+
 	}
 }

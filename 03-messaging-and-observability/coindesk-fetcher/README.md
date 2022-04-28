@@ -12,7 +12,7 @@ This is an example of fetching a resource from an API and publishing the parsed 
 COIN_DESK_ENDPOINT=https://api.coindesk.com/v1/bpi/currentprice.json \
 PUB_SUB_NAME=price_pub_sub \
 TOPIC_NAME=price \
-dapr run --app-id coindesk-fetcher --components-path ../deploy -- go run main.go
+dapr run --app-id coindesk-fetcher --components-path ../deploy-local -- go run main.go
 ```
 
 ### Clean up

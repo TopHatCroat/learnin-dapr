@@ -17,10 +17,13 @@ export async function app() {
 
     // Dapr subscription routes orders topic to this route
     server.pubsub.subscribe(pubSubName, topicName, async (data: PriceEvent) => {
+        console.log(`Event received ${JSON.stringify(data)}`);
+
         const result = await processPriceEvent(data);
 
         await savePrice(result.symbol, result.usd, result.eur)
     });
 
+    console.log(`Starting...`);
     await server.start();
 }
